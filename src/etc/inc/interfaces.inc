@@ -3865,17 +3865,49 @@ function interfaces_staticarp_configure($if, $ifconfig_details = null)
         mwexecf('/usr/sbin/arp -d -i %s -a', [$ifcfg['if']]);
     }
 
-    if (isset($config['dhcpd'][$if]['staticmap'])) {
-        foreach ($config['dhcpd'][$if]['staticmap'] as $arpent) {
-            if (!$want && !isset($arpent['arp_table_static_entry'])) {
+    interfaces_neighbors_configure($ifcfg['if'], $ifconfig_details);
+}
+
+function interfaces_neighbors_configure($device = null, $ifconfig_details = null)
+{
+    $subnets = [];
+
+    if (!empty($device)) {
+        if (empty($ifconfig_details) || empty($ifconfig_details[$device])) {
+            /* when called with an interface, require $ifconfig_details being passed */
+            return;
+        }
+
+        foreach (['ipv4', 'ipv6'] as $proto) {
+            if (empty($ifconfig_details[$device])) {
                 continue;
             }
-            if (!isset($arpent['ipaddr'])) {
-                continue;
+            foreach ($ifconfig_details[$device][$proto] as $item) {
+                $subnets[] = $item['ipaddr'] . '/' . $item['subnetbits'];
             }
-            mwexecf('/usr/sbin/arp -s %s %s', [$arpent['ipaddr'], $arpent['mac']]);
         }
     }
+
+    $current_neightbors = [];
+    foreach ((new \OPNsense\Interfaces\Neighbor())->neighbor->iterateItems() as $key => $node) {
+        $found = empty($if);    /* unfiltered when no $if provided */
+        foreach ($subnets as $subnet) {
+            $found = ip_in_subnet((string)$node->ipaddress, $subnet);
+            if ($found) {
+                break;
+            }
+        }
+        if ($found) {
+            // IPv4 [arp] or IPv6 [ndp]
+            if (strpos($node->ipaddress, ":") === false) {
+                mwexecf('/usr/sbin/arp -s %s %s', [$node->ipaddress, $node->etheraddr]);
+            } else {
+                mwexecf('/usr/sbin/ndp -s %s %s', [$node->ipaddress, $node->etheraddr]);
+            }
+        }
+        $current_neightbors[] = $node->ipaddress;
+    }
+
 }
 
 function get_interfaces_info($include_unlinked = false)
