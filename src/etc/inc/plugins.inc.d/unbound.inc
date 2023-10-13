@@ -143,6 +143,10 @@ function unbound_generate_config()
     mwexecf('/sbin/mount -t devfs devfs %s', '/var/unbound/dev');
     mwexecf('/sbin/mount -r -t nullfs %s %s', [$python_dir, $chroot_python_dir]);
 
+    if (!file_exists('/var/unbound/root.hints.copy')) {
+        @copy('/usr/local/opnsense/service/templates/OPNsense/Unbound/core/root.min.hints', '/var/unbound/root.hints.copy');
+    }
+
     $optimization = unbound_optimization();
 
     $module_config = 'python ';
@@ -283,7 +287,7 @@ chroot: /var/unbound
 username: unbound
 directory: /var/unbound
 pidfile: /var/run/unbound.pid
-root-hints: /var/unbound/root.hints
+root-hints: /var/unbound/root.hints.copy
 use-syslog: yes
 port: {$port}
 include: /var/unbound/advanced.conf
