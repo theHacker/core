@@ -1,0 +1,26 @@
+<form>
+    <field>
+        <id>reservation.subnet</id>
+        <label>Subnet</label>
+        <type>dropdown</type>
+        <help></help>
+    </field>
+    <field>
+        <id>reservation.ip_address</id>
+        <label>IPaddress</label>
+        <type>text</type>
+        <help></help>
+    </field>
+    <field>
+        <id>reservation.hw_address</id>
+        <label>MACaddress</label>
+        <type>text</type>
+        <help></help>
+    </field>
+    <field>
+        <id>reservation.description</id>
+        <label>MACaddress</label>
+        <type>text</type>
+        <help></help>
+    </field>
+</form>
